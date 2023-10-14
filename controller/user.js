@@ -44,17 +44,17 @@ exports.emailOtpSend = async (req, res) => {
     let userEmail = await otpModel.findOne({ email });
     if (userEmail) {
       if (userEmail.isVerified === true) {
-        return res.status(400).json({
+        return res.status(208).json({
           success: true,
           message: "Email is Already Verified Try New With New Email",
         });
       }
-      let store = await userEmail.deleteOne({ _id: userEmail._id })
+      await userEmail.deleteOne({ _id: userEmail._id })
 
       await otpModel.create({ email, otp: otpgen, isVerified: false });
       sendOTPEmail(email, otpgen);
 
-      res.status(400).json({
+      res.status(200).json({
         success: true,
         message: "Otp Sent To Your Email",
       });
@@ -63,7 +63,7 @@ exports.emailOtpSend = async (req, res) => {
       await otpModel.create({ email, otp: otpgen, isVerified: false });
       sendOTPEmail(email, otpgen);
 
-      res.status(400).json({
+      res.status(200).json({
         success: true,
         message: "Otp Sent To Your Email",
       });
@@ -153,11 +153,6 @@ exports.createUser = async (req, res) => {
   }
 };
 
-
-// 1: check user email is verified or not?
-// 2: any otp exist before?
-// 3: if otp is exist before or it's not verified then update otp with new otp.
-
 exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -192,7 +187,7 @@ exports.verifyOtp = async (req, res) => {
       success: true,
       message: "Otp verified",
     })
-    .status(200);
+    .status(202);
 };
 
 exports.updateUser = async (req, res) => {
@@ -206,7 +201,7 @@ exports.updateUser = async (req, res) => {
     }
 
     let user = await User.findByIdAndUpdate(id, { name, age });
-    res.status(204).json({
+    res.status(201).json({
       message: "details updated successfully",
       user,
     });
@@ -267,7 +262,7 @@ exports.loginUser = async (req, res) => {
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
-    res.status(200).json({
+    res.status(202).json({
       success: true,
       message: "Welcome To Your Profile",
     });
