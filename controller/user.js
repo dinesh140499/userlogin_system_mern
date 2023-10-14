@@ -40,25 +40,56 @@ exports.emailOtpSend = async (req, res) => {
     upperCaseAlphabets: false,
     specialChars: false,
   });
+  try {
+    let userEmail = await otpModel.findOne({ email });
+    if (userEmail) {
+      if (userEmail.isVerified === true) {
+        return res.status(400).json({
+          success: true,
+          message: "Email is Already Verified Try New With New Email",
+        });
+      }
+      let store = await userEmail.deleteOne({ _id: userEmail._id })
 
-  let userEmail = await otpModel.findOne({ email });
+      await otpModel.create({ email, otp: otpgen, isVerified: false });
+      sendOTPEmail(email, otpgen);
 
-  if (userEmail) {
-    if (userEmail.isVerified === true) {
-      return res.status(400).json({
+      res.status(400).json({
         success: true,
-        message: "User Already Registered",
+        message: "Otp Sent To Your Email",
+      });
+    } else {
+
+      await otpModel.create({ email, otp: otpgen, isVerified: false });
+      sendOTPEmail(email, otpgen);
+
+      res.status(400).json({
+        success: true,
+        message: "Otp Sent To Your Email",
       });
     }
+
+    // if (!userEmail.otp) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Otp is not exist",
+    //   });
+    // }
+
+    // console.log("otp is sent ", userEmail)
+    // let store = await userEmail.deleteOne({ _id: userEmail._id })
+    // console.log('otp updated', store)
+
+    // await otpModel.create({ email, otp: otpgen, isVerified: false });
+    // sendOTPEmail(email, otpgen);
+
+    // res.status(400).json({
+    //   success: true,
+    //   message: "Otp Sent To Your Email",
+    // });
+  } catch (error) {
+    console.log(error)
   }
-
-  await otpModel.create({ email, otp: otpgen, isVerified: false });
-  sendOTPEmail(email, otpgen);
-
-  res.status(400).json({
-    success: true,
-    message: "Otp Sent To Your Email",
-  });
 };
 
 exports.createUser = async (req, res) => {
@@ -122,6 +153,11 @@ exports.createUser = async (req, res) => {
   }
 };
 
+
+// 1: check user email is verified or not?
+// 2: any otp exist before?
+// 3: if otp is exist before or it's not verified then update otp with new otp.
+
 exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -133,14 +169,17 @@ exports.verifyOtp = async (req, res) => {
   }
 
   const isMatch = await otpModel.findOne({ email });
+  // console.log(isMatch.otp)
 
   if (!isMatch) {
     return res.status(400).json({ error: "OTP not found" });
   }
 
+
   if (isMatch.isVerified === true) {
     return res.status(400).json({ error: "Email Already Registered" });
   }
+
 
   if (isMatch.otp !== otp) {
     return res.status(400).json({ error: "Invalid OTP" });
@@ -257,7 +296,7 @@ exports.forgotPassword = async (req, res) => {
       await User.updateOne({ email }, { $set: { token: rndString } });
       resetPasswordMail(user.email, rndString);
 
-      res.json({
+      res.status(200).json({
         message: "Reset Password has been sent to your email.",
         success: true,
       });
@@ -277,6 +316,13 @@ exports.resetPassword = async (req, res) => {
     const { password } = req.body;
     const { token } = req.query;
 
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password Should Be Greater Then 8 Character",
+      });
+    }
+
     const tokenExist = await User.findOne({ token }).select("+password");
 
     if (!tokenExist) {
@@ -293,10 +339,9 @@ exports.resetPassword = async (req, res) => {
       { new: true }
     );
 
-    res.status(204).json({
+    res.status(201).json({
       success: true,
       message: "Password Reset Successfully",
-      userUpdate,
     });
   } catch (error) {
     console.log(error);

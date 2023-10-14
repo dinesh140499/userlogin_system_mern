@@ -20,7 +20,7 @@ app.use(express.json())
 app.use(cookieParser())
 
 // Routes
-app.use('/api/v1', userRoute)
+app.use('/api/v1/user', userRoute)
 
 
 app.listen(process.env.PORT, () => {
