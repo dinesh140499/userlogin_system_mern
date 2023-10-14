@@ -3,6 +3,7 @@ const app = express()
 const dotenv = require('dotenv')
 const cookieParser = require('cookie-parser')
 const fileUpload=require('express-fileupload')
+const cors=require('cors')
 
 // console.log(new Date(Date.now()))
 
@@ -13,6 +14,7 @@ require('./utils/conn.js')
 const userRoute = require('./routes/userRoute')
 
 // Middlewares
+app.use(cors())
 app.use(fileUpload({useTempFiles:true}))
 app.use(express.json())
 app.use(cookieParser())
